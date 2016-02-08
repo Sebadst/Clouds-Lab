@@ -1,0 +1,22 @@
+SET default_parallel 20;
+A = LOAD 'airlines-simple.txt' USING PigStorage(',') AS 
+	(year: int, month: int, day: int, dow: int, 
+	dtime: int, sdtime: int, arrtime: int, satime: int, 
+	carrier: chararray, fn: int, tn: chararray, 
+	etime: int, setime: int, airtime: int, 
+	adelay: int, ddelay: int, 
+	scode: chararray, dcode: chararray, dist: int, 
+	tintime: int, touttime: int, 
+	cancel: chararray, cancelcode: chararray, diverted: int, 
+	cdelay: int, wdelay: int, ndelay: int, sdelay: int, latedelay: int);
+B = CUBE A BY ROLLUP(scode,year,month,day);
+C = CUBE A BY ROLLUP(dcode,year,month,day);
+E = foreach B generate FLATTEN(group), COUNT(cube.scode) as inbound;
+F = foreach C generate FLATTEN(group), COUNT(cube.dcode) as outbound;
+--STORE E 
+--STORE F
+
+G = UNION E, F;
+H = GROUP G BY ($0,$1,$2,$3);
+I = FOREACH H GENERATE FLATTEN(group), SUM(G.$4);
+dump I;

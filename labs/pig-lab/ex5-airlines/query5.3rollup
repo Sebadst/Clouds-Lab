@@ -1,0 +1,20 @@
+SET default_parallel 20;
+A = LOAD 'airlines-simple.txt' USING PigStorage(',') AS 
+	(year: int, month: int, day: int, dow: int, 
+	dtime: int, sdtime: int, arrtime: int, satime: int, 
+	carrier: chararray, fn: int, tn: chararray, 
+	etime: int, setime: int, airtime: int, 
+	adelay: int, ddelay: int, 
+	scode: chararray, dcode: chararray, dist: int, 
+	tintime: int, touttime: int, 
+	cancel: chararray, cancelcode: chararray, diverted: int, 
+	cdelay: int, wdelay: int, ndelay: int, sdelay: int, latedelay: int);
+B = foreach A generate adelay,year,month,day;
+C = CUBE B BY ROLLUP(year,month,day);
+E = FOREACH C {
+D = FILTER B BY (adelay>=15);  --si mette dentro il foreach perche devo generare
+--il count anche di questo per ogni riga
+--altrimenti mi dice che non posso usarlo come uno scalare
+GENERATE group, COUNT(cube.adelay),COUNT(D), (float) COUNT(D)/COUNT(cube.adelay);
+}
+DUMP E;
